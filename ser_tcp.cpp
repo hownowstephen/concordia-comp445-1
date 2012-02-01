@@ -4,12 +4,13 @@
 // 1999 June 30
 
 #include <winsock.h>
+#include <process.h>
 #include <iostream>
-using namespace std;
 #include <fstream>
 #include <windows.h>
 #include <string.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include "filetransfer.cpp"
 
 //port data types
@@ -19,8 +20,6 @@ using namespace std;
 #define PUT "put"
 #define OK "OK"
 #define	STKSIZE	 16536
-
-#include "Thread.h"
 
 int port=REQUEST_PORT;
 
@@ -90,10 +89,10 @@ union {struct sockaddr generic;
 		if(!strcmp(direction,GET)){
 			cout << "Sending " << filename << " to client " << client_name << endl;
 			
-			put(s1,filename);
+			put(s1,"server","put",filename);
 		}else if(!strcmp(direction,PUT)){
 			cout << "Receiving " << filename << " from " << client_name << endl;
-			get(s1,filename);
+			get(s1,"server","get",filename);
 		}
 	}
 

@@ -1,6 +1,8 @@
 #include <winsock.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <iostream>
+using namespace std;
 #include <fstream>
 #include <string.h>
 #include <windows.h>
@@ -14,9 +16,10 @@
 #define MISSING "NO"
 
 
-void get(SOCKET s, char * filename){
+void get(SOCKET s, char * username, char * direction, char * filename){
 
 	char szbuffer[BUFFER_SIZE];
+	memset(szbuffer,0,BUFFER_SIZE);
 
 	char *buffer;
 	int ibufferlen=0;
@@ -93,9 +96,10 @@ void get(SOCKET s, char * filename){
  }
 
 
-void put(SOCKET s, char * filename){
+void put(SOCKET s, char * username, char * direction, char * filename){
 
 	char szbuffer[BUFFER_SIZE];
+	memset(szbuffer,0,BUFFER_SIZE);
 
 	char *buffer;
 	int ibufferlen=0;
