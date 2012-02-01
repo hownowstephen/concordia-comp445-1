@@ -25,14 +25,10 @@ int port=REQUEST_PORT;
 
 //socket data types
 SOCKET s;
-
-SOCKET s1;
 SOCKADDR_IN sa;      // filled by bind
 SOCKADDR_IN sa1;     // fill with server info, IP, port
-union {struct sockaddr generic;
-	struct sockaddr_in ca_in;}ca;
 
-	int calen=sizeof(ca); 
+	
 
 	//buffer data types
 
@@ -70,7 +66,25 @@ union {struct sockaddr generic;
 
 	void handle_client(){
 
+		SOCKET s1;
+		union {
+			struct sockaddr generic;
+			struct sockaddr_in ca_in;
+		}ca;
+
+		int calen=sizeof(ca); 
+
 		char szbuffer[BUFFER_SIZE];
+
+		try {
+
+		//Found a connection request, try to accept. 
+		if((s1=accept(s,&ca.generic,&calen))==INVALID_SOCKET)
+			throw "Couldn't accept connection\n";
+
+		//Connection request accepted.
+		cout<<"accepted connection from "<<inet_ntoa(ca.ca_in.sin_addr)<<":"
+			<<hex<<htons(ca.ca_in.sin_port)<<endl;
 
 		//Fill in szbuffer from accepted request.
 		if((ibytesrecv = recv(s1,szbuffer,BUFFER_SIZE,0)) == SOCKET_ERROR)
@@ -94,6 +108,13 @@ union {struct sockaddr generic;
 			cout << "Receiving " << filename << " from " << client_name << endl;
 			get(s1,"server","get",filename);
 		}
+
+		} catch(char* str){
+			cerr<<str<<WSAGetLastError()<<endl;
+		}
+
+		//close Client socket
+		closesocket(s1);	
 	}
 
 	int main(void){
@@ -168,25 +189,16 @@ union {struct sockaddr generic;
 
 				else if (outfds == SOCKET_ERROR) throw "failure in Select";
 
-				else if (FD_ISSET(s,&readfds))  cout << "got a connection request" << endl; 
+				else if (FD_ISSET(s,&readfds)){
+				  cout << "got a connection request" << endl; 
 
-						//Found a connection request, try to accept. 
-
-				if((s1=accept(s,&ca.generic,&calen))==INVALID_SOCKET)
-					throw "Couldn't accept connection\n";
-
-				//Connection request accepted.
-				cout<<"accepted connection from "<<inet_ntoa(ca.ca_in.sin_addr)<<":"
-					<<hex<<htons(ca.ca_in.sin_port)<<endl;
-
-
-				int args = 0;
-			    if(( result = _beginthread((void (*)(void *))handle_client, STKSIZE, (void *) args))<0)
-				{
-					printf("_beginthread error\n");
-					exit(-1);
+					int args = 0;
+				    if(( result = _beginthread((void (*)(void *))handle_client, STKSIZE, (void *) args))<0)
+					{
+						printf("_beginthread error\n");
+						exit(-1);
+					}
 				}
-				
 
 			}//wait loop
 
@@ -194,10 +206,7 @@ union {struct sockaddr generic;
 
 		//Display needed error message.
 
-		catch(char* str) { cerr<<str<<WSAGetLastError()<<endl;}
-
-		//close Client socket
-		closesocket(s1);		
+		catch(char* str) { cerr<<str<<WSAGetLastError()<<endl;}	
 
 		//close server socket
 		closesocket(s);

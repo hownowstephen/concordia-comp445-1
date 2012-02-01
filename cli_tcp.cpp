@@ -148,7 +148,7 @@ int main(void){
 			cout << "user: " << cusername << endl;
 
 			//append client message to szbuffer + send.
-			sprintf(szbuffer,"%s %s %s", cusername, direction, filename); 
+			sprintf(szbuffer,"%s %s %s\0", cusername, direction, filename); 
 
 			ibytessent=0;    
 			ibufferlen = strlen(szbuffer);
