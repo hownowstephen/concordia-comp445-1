@@ -18,6 +18,9 @@ using namespace std;
 #define GET "get"
 #define PUT "put"
 #define OK "OK"
+#define	STKSIZE	 16536
+
+#include "Thread.h"
 
 int port=REQUEST_PORT;
 
@@ -65,6 +68,34 @@ union {struct sockaddr generic;
 	HANDLE test;
 
 	DWORD dwtest;
+
+	void handle_client(){
+
+		char szbuffer[BUFFER_SIZE];
+
+		//Fill in szbuffer from accepted request.
+		if((ibytesrecv = recv(s1,szbuffer,BUFFER_SIZE,0)) == SOCKET_ERROR)
+			throw "Receive error in server program\n";
+
+		cout << "Received headers from client" << szbuffer << endl;
+		// Retrieve data about the user
+		char client_name[11];
+		char direction[3];
+		char filename[100];
+
+		sscanf(szbuffer,"%s %s %s",client_name,direction,filename);
+
+		cout << "Client " << client_name << " requesting to " << direction << " file " << filename << endl;
+
+		if(!strcmp(direction,GET)){
+			cout << "Sending " << filename << " to client " << client_name << endl;
+			
+			put(s1,filename,szbuffer);
+		}else if(!strcmp(direction,PUT)){
+			cout << "Receiving " << filename << " from " << client_name << endl;
+			get(s1,filename,szbuffer);
+		}
+	}
 
 	int main(void){
 
@@ -126,6 +157,8 @@ union {struct sockaddr generic;
 
 			//wait loop
 
+			int result;
+
 			while(1)
 
 			{
@@ -138,7 +171,7 @@ union {struct sockaddr generic;
 
 				else if (FD_ISSET(s,&readfds))  cout << "got a connection request" << endl; 
 
-				//Found a connection request, try to accept. 
+						//Found a connection request, try to accept. 
 
 				if((s1=accept(s,&ca.generic,&calen))==INVALID_SOCKET)
 					throw "Couldn't accept connection\n";
@@ -147,27 +180,14 @@ union {struct sockaddr generic;
 				cout<<"accepted connection from "<<inet_ntoa(ca.ca_in.sin_addr)<<":"
 					<<hex<<htons(ca.ca_in.sin_port)<<endl;
 
-				//Fill in szbuffer from accepted request.
-				if((ibytesrecv = recv(s1,szbuffer,BUFFER_SIZE,0)) == SOCKET_ERROR)
-					throw "Receive error in server program\n";
 
-				cout << "Received headers from client" << szbuffer << endl;
-				// Retrieve data about the user
-				char client_name[11];
-				char direction[3];
-				char filename[100];
-
-				sscanf(szbuffer,"%s %s %s",client_name,direction,filename);
-
-				cout << "Client " << client_name << " requesting to " << direction << " file " << filename << endl;
-
-				if(!strcmp(direction,GET)){
-					cout << "Sending " << filename << " to client " << client_name << endl;
-					put(s1,filename,szbuffer);
-				}else if(!strcmp(direction,PUT)){
-					cout << "Receiving " << filename << " from " << client_name << endl;
-					get(s1,filename,szbuffer);
+				int args = 0;
+			    if(( result = _beginthread((void (*)(void *))handle_client, STKSIZE, (void *) args))<0)
+				{
+					printf("_beginthread error\n");
+					exit(-1);
 				}
+				
 
 			}//wait loop
 
