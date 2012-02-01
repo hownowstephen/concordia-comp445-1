@@ -90,10 +90,10 @@ union {struct sockaddr generic;
 		if(!strcmp(direction,GET)){
 			cout << "Sending " << filename << " to client " << client_name << endl;
 			
-			put(s1,filename,szbuffer);
+			put(s1,filename);
 		}else if(!strcmp(direction,PUT)){
 			cout << "Receiving " << filename << " from " << client_name << endl;
-			get(s1,filename,szbuffer);
+			get(s1,filename);
 		}
 	}
 

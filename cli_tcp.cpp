@@ -159,8 +159,8 @@ int main(void){
 				cout << "Message to server: " << szbuffer << endl;
 			memset(szbuffer,0,BUFFER_SIZE);
 
-			if(!strcmp(direction,GET)) get(s,filename,szbuffer);
-			else if(!strcmp(direction,PUT))	put(s,filename,szbuffer);
+			if(!strcmp(direction,GET)) get(s,username,direction,filename);
+			else if(!strcmp(direction,PUT))	put(s,filename);
 
 		}else{
 			cout << "the request type was not recognized, this server only supports get or put";
