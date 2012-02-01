@@ -2,26 +2,18 @@
 // revised and tidied up by
 // J.W. Atwood
 // 1999 June 30
-// There is still some leftover trash in this code.
 
-/* send and receive codes between client and server */
-/* This is your basic WINSOCK shell */
 #include <winsock.h>
 #include <iostream>
 using namespace std;
-
 #include <fstream>
-using namespace std;
-
 #include <windows.h>
-
 #include <string.h>
 #include <stdio.h>
+#include "filetransfer.cpp"
 
 //port data types
-
 #define REQUEST_PORT 0x7070
-
 #define BUFFER_SIZE 128
 #define GET "get"
 #define PUT "put"
@@ -73,28 +65,6 @@ union {struct sockaddr generic;
 	HANDLE test;
 
 	DWORD dwtest;
-
-	//reference for used structures
-
-	/*  * Host structure
-
-	    struct  hostent {
-	    char    FAR * h_name;             official name of host *
-	    char    FAR * FAR * h_aliases;    alias list *
-	    short   h_addrtype;               host address type *
-	    short   h_length;                 length of address *
-	    char    FAR * FAR * h_addr_list;  list of addresses *
-#define h_addr  h_addr_list[0]            address, for backward compat *
-};
-
-	 * Socket address structure
-
-	 struct sockaddr_in {
-	 short   sin_family;
-	 u_short sin_port;
-	 struct  in_addr sin_addr;
-	 char    sin_zero[8];
-	 }; */
 
 	int main(void){
 
@@ -185,116 +155,18 @@ union {struct sockaddr generic;
 				// Retrieve data about the user
 				char client_name[11];
 				char direction[3];
-				char file[100];
+				char filename[100];
 
-				sscanf(szbuffer,"%s %s %s",client_name,direction,file);
+				sscanf(szbuffer,"%s %s %s",client_name,direction,filename);
 
-				cout << "Client " << client_name << " requesting to " << direction << " file " << file << endl;
+				cout << "Client " << client_name << " requesting to " << direction << " file " << filename << endl;
 
 				if(!strcmp(direction,GET)){
-					cout << "Sending file " << file << " to client " << client_name << endl;
-
-					ifstream filedata;
-					filebuf *pbuf;
-					int filesize;
-
-					// Open the file
-					filedata.open(file,ifstream::binary);
-
-					// Get pointer to file buffer and determine file size
-					pbuf = filedata.rdbuf();
-					filesize = pbuf->pubseekoff(0,ios::end,ios::in);
-					pbuf->pubseekpos(0,ios::in);
-
-					cout << "File size: " << filesize << endl;
-
-					// Send back an OK message to the client to confirm receipt
-					memset(szbuffer,0,BUFFER_SIZE);
-					sprintf(szbuffer,"OK %d",filesize);
-					ibufferlen = strlen(szbuffer);
-
-					if((ibytessent = send(s1,szbuffer,ibufferlen,0))==SOCKET_ERROR)
-						throw "error in send in server program\n";
-
-					memset(szbuffer,0,BUFFER_SIZE);
-					if((ibytesrecv = recv(s1,szbuffer,BUFFER_SIZE,0)) == SOCKET_ERROR)
-						throw "Receive error in server program\n";
-					
-					cout << "Sending file to client" << endl;
-
-
-					// Loop through the file and stream to the client
-					while(!filedata.eof()){
-						filedata.read(szbuffer,BUFFER_SIZE-1);
-						ibufferlen = strlen(szbuffer);
-						if((ibytessent = send(s1,szbuffer,ibufferlen,0))==SOCKET_ERROR)
-							throw "error in send in server program\n";
-
-						memset(szbuffer,0,BUFFER_SIZE);
-					}
-
-					if((ibytesrecv = recv(s1,szbuffer,BUFFER_SIZE,0)) == SOCKET_ERROR)
-						throw "Receive error in server program\n";
-
-					if(!strcmp(szbuffer,OK)){
-						cout << "File transfer completed" << endl;
-					}
-
-					memset(szbuffer,0,BUFFER_SIZE);
-
+					cout << "Sending " << filename << " to client " << client_name << endl;
+					put(s1,filename,szbuffer);
 				}else if(!strcmp(direction,PUT)){
-					cout << "Waiting for file " << file << " from client " << client_name << endl;
-					// Parse response and filesize from server
-					char response[2];
-					int filesize;
-					ofstream output_file;
-
-					output_file.open("output.txt",ofstream::binary);
-
-					sscanf(szbuffer,"%s %d",response,&filesize);
-					cout << "Response " << response << " filesize " << filesize << endl;
-
-
-					// Send ack to signal to the server to send data
-					memset(szbuffer,0,BUFFER_SIZE);
-					sprintf(szbuffer,"SEND\0");
-					ibufferlen = strlen(szbuffer);
-
-					cout << szbuffer << ibufferlen;
-
-					if ((ibytessent = send(s1,szbuffer,ibufferlen,0)) == SOCKET_ERROR)
-						throw "Send failed\n";  
-
-					cout << "Sent ack to client" << endl;
-
-					// Intermediary buffer for formatting incoming data
-					char outdata[BUFFER_SIZE];
-					int count = 0;
-
-					// Read data from the server until we have received the file
-					while(count < filesize){
-						if((ibytesrecv = recv(s1,szbuffer,BUFFER_SIZE-1,0)) == SOCKET_ERROR)
-							throw "Receive failed\n";
-
-						sprintf(outdata,"%s",szbuffer);
-						output_file.write(outdata,strlen(outdata));
- 
-						count += strlen(outdata);
-						// Sanitize buffer
-						memset(szbuffer,0,BUFFER_SIZE);
-						memset(outdata,0,BUFFER_SIZE);
-					}
-
-					// Close our output file
-					output_file.close();
-
-					// Clear the buffer and send an ack to the server to confirm receipt
-					memset(szbuffer,0,BUFFER_SIZE);
-					sprintf(szbuffer,"OK");
-					ibufferlen = strlen(szbuffer);
-
-					if ((ibytessent = send(s1,szbuffer,ibufferlen,0)) == SOCKET_ERROR)
-						throw "Send failed\n";  
+					cout << "Receiving " << filename << " from " << client_name << endl;
+					get(s1,filename,szbuffer);
 				}
 
 			}//wait loop

@@ -159,13 +159,6 @@ int main(void){
 				cout << "Message to server: " << szbuffer << endl;
 			memset(szbuffer,0,BUFFER_SIZE);
 
-			//wait for reception of server response.
-			ibytesrecv=0; 
-			if((ibytesrecv = recv(s,szbuffer,BUFFER_SIZE,0)) == SOCKET_ERROR)
-				throw "Receive failed\n";
-			
-			cout << "Server responded with " << szbuffer << endl;
-
 			if(!strcmp(direction,GET)) get(s,filename,szbuffer);
 			else if(!strcmp(direction,PUT))	put(s,filename,szbuffer);
 

@@ -33,6 +33,13 @@ HOSTENT *rp;
 	char response[2];
 	int filesize;
 	ofstream output_file;
+
+	//wait for reception of server response.
+	ibytesrecv=0; 
+	if((ibytesrecv = recv(s,szbuffer,BUFFER_SIZE,0)) == SOCKET_ERROR)
+		throw "Receive failed\n";
+	
+	cout << "Server responded with " << szbuffer << endl;
 	
 	output_file.open("output.txt",ofstream::binary);
 
@@ -61,6 +68,8 @@ HOSTENT *rp;
 		output_file.write(outdata,strlen(outdata));
 
 		count += strlen(outdata);
+
+		cout << "Received " << count << " bytes" << endl;
 		// Sanitize buffer
 		memset(szbuffer,0,BUFFER_SIZE);
 		memset(outdata,0,BUFFER_SIZE);
@@ -80,18 +89,16 @@ HOSTENT *rp;
 
 
 void put(SOCKET s, char * filename, char * szbuffer){
-	//buffer data types
-char *buffer;
 
-int ibufferlen=0;
+	char *buffer;
+	int ibufferlen=0;
+	int ibytessent;
+	int ibytesrecv=0;
+	//host data types
+	HOSTENT *hp;
+	HOSTENT *rp;
 
-int ibytessent;
-int ibytesrecv=0;
-
-
- 	// Perform a put request
- 	// Handle put request
-	cout << "Sending file " << filename << " to server" << endl;
+	cout << "Sending file " << filename << endl;
 
 	ifstream filedata;
 	filebuf *pbuf;
@@ -107,30 +114,33 @@ int ibytesrecv=0;
 
 	cout << "File size: " << filesize << endl;
 
-	// Send an OK message to the server to confirm receipt
+	// Send back an OK message to the client to confirm receipt
 	memset(szbuffer,0,BUFFER_SIZE);
 	sprintf(szbuffer,"OK %d",filesize);
 	ibufferlen = strlen(szbuffer);
 
 	if((ibytessent = send(s,szbuffer,ibufferlen,0))==SOCKET_ERROR)
-		throw "error in send in client\n";
+		throw "error in send in server program\n";
 
 	memset(szbuffer,0,BUFFER_SIZE);
 	if((ibytesrecv = recv(s,szbuffer,BUFFER_SIZE,0)) == SOCKET_ERROR)
-		throw "Receive error in client\n";
+		throw "Receive error in server program\n";
 
+	int count = 0;
 	// Loop through the file and stream to the client
 	while(!filedata.eof()){
 		filedata.read(szbuffer,BUFFER_SIZE-1);
 		ibufferlen = strlen(szbuffer);
+		count += ibufferlen;
+		cout << "Sent " << count << " bytes" << endl;
 		if((ibytessent = send(s,szbuffer,ibufferlen,0))==SOCKET_ERROR)
-			throw "error in send in client\n";
+			throw "error in send in server program\n";
 
 		memset(szbuffer,0,BUFFER_SIZE);
 	}
 
 	if((ibytesrecv = recv(s,szbuffer,BUFFER_SIZE,0)) == SOCKET_ERROR)
-		throw "Receive error in client\n";
+		throw "Receive error in server program\n";
 
 	if(!strcmp(szbuffer,OK)){
 		cout << "File transfer completed" << endl;
