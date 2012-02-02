@@ -148,7 +148,7 @@ int main(void){
 			cout << "user: " << cusername << endl;
 
 			//append client message to szbuffer + send.
-			sprintf(szbuffer,"%s %s %s\0", cusername, direction, filename); 
+			sprintf(szbuffer,"%s %s %s", cusername, direction, filename); 
 
 			ibytessent=0;    
 			ibufferlen = strlen(szbuffer);
@@ -170,7 +170,9 @@ int main(void){
 
 	//Display any needed error response.
 
-	catch (char *str) { cerr<<str<<":"<<dec<<WSAGetLastError()<<endl;}
+	catch (const char *str) { 
+		cerr<<str<<endl;
+	}
 
 	//close the client socket
 	closesocket(s);

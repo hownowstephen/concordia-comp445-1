@@ -13,6 +13,8 @@
 #include <stdlib.h>
 #include "filetransfer.cpp"
 
+#include <time.h>
+
 //port data types
 #define REQUEST_PORT 0x7070
 #define BUFFER_SIZE 128
@@ -78,39 +80,38 @@ SOCKADDR_IN sa1;     // fill with server info, IP, port
 
 		try {
 
-		//Found a connection request, try to accept. 
-		if((s1=accept(s,&ca.generic,&calen))==INVALID_SOCKET)
-			throw "Couldn't accept connection\n";
+			//Found a connection request, try to accept. 
+			if((s1=accept(s,&ca.generic,&calen))==INVALID_SOCKET)
+				throw "Couldn't accept connection\n";
 
-		//Connection request accepted.
-		cout<<"accepted connection from "<<inet_ntoa(ca.ca_in.sin_addr)<<":"
-			<<hex<<htons(ca.ca_in.sin_port)<<endl;
+			//Connection request accepted.
+			cout<<"accepted connection from "<<inet_ntoa(ca.ca_in.sin_addr)<<":"
+				<<hex<<htons(ca.ca_in.sin_port)<<endl;
 
-		//Fill in szbuffer from accepted request.
-		if((ibytesrecv = recv(s1,szbuffer,BUFFER_SIZE,0)) == SOCKET_ERROR)
-			throw "Receive error in server program\n";
+			memset(szbuffer,0,BUFFER_SIZE);
 
-		cout << "Received headers from client" << szbuffer << endl;
-		// Retrieve data about the user
-		char client_name[11];
-		char direction[3];
-		char filename[100];
+			//Fill in szbuffer from accepted request.
+			if((ibytesrecv = recv(s1,szbuffer,BUFFER_SIZE,0)) == SOCKET_ERROR)
+				throw "Error in client headers";
 
-		sscanf(szbuffer,"%s %s %s",client_name,direction,filename);
+			cout << "Received headers from client" << szbuffer << endl;
+			// Retrieve data about the user
+			char client_name[11];
+			char direction[3];
+			char filename[100];
 
-		cout << "Client " << client_name << " requesting to " << direction << " file " << filename << endl;
+			sscanf(szbuffer,"%s %s %s",client_name,direction,filename);
 
-		if(!strcmp(direction,GET)){
-			cout << "Sending " << filename << " to client " << client_name << endl;
-			
-			put(s1,"server","put",filename);
-		}else if(!strcmp(direction,PUT)){
-			cout << "Receiving " << filename << " from " << client_name << endl;
-			get(s1,"server","get",filename);
-		}
+			cout << "Client " << client_name << " requesting to " << direction << " file " << filename << endl;
 
-		} catch(char* str){
-			cerr<<str<<WSAGetLastError()<<endl;
+			if(!strcmp(direction,GET)){
+				put(s1,"server","put",filename);
+			}else if(!strcmp(direction,PUT)){
+				get(s1,"server","get",filename);
+			}
+
+		} catch(const char* str){
+			cerr << str << endl;
 		}
 
 		//close Client socket
@@ -120,12 +121,12 @@ SOCKADDR_IN sa1;     // fill with server info, IP, port
 	int main(void){
 
 		WSADATA wsadata;
-
-		try{        		 
+		 
+		try {
 			if (WSAStartup(0x0202,&wsadata)!=0){  
 				cout<<"Error in starting WSAStartup()\n";
 			}else{
-				buffer="WSAStartup was suuccessful\n";   
+				buffer="WSAStartup was successful\n";   
 				WriteFile(test,buffer,sizeof(buffer),&dwtest,NULL); 
 
 				/* display the wsadata structure */
@@ -182,6 +183,7 @@ SOCKADDR_IN sa1;     // fill with server info, IP, port
 			while(1)
 
 			{
+				Sleep(1);
 
 				FD_SET(s,&readfds);  //always check the listener
 
@@ -190,23 +192,20 @@ SOCKADDR_IN sa1;     // fill with server info, IP, port
 				else if (outfds == SOCKET_ERROR) throw "failure in Select";
 
 				else if (FD_ISSET(s,&readfds)){
-				  cout << "got a connection request" << endl; 
 
 					int args = 0;
-				    if(( result = _beginthread((void (*)(void *))handle_client, STKSIZE, (void *) args))<0)
+				    if(( result = _beginthread((void (*)(void *))handle_client, STKSIZE, (void *) args))>=0)
 					{
-						printf("_beginthread error\n");
-						exit(-1);
+						cout << "New connection" << endl; 
 					}
 				}
 
 			}//wait loop
 
-		} //try loop
+		} catch(const char * str){
+			cerr << str << endl;
+		}
 
-		//Display needed error message.
-
-		catch(char* str) { cerr<<str<<WSAGetLastError()<<endl;}	
 
 		//close server socket
 		closesocket(s);

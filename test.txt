@@ -1,1 +1,1 @@
-this is test data from the server
+this is some new data to overwrite test.txt. reduxed.
