@@ -92,6 +92,7 @@ void get(SOCKET s, char * username, char * direction, char * filename){
 			if ((ibytessent = send(s,szbuffer,ibufferlen,0)) == SOCKET_ERROR)
 				throw "Send failed\n";  
 		}else{
+			// Make a note that the file does not exist
 			cout << "Requested file does not exist" << endl;
 		}
 	} catch(const char* str){
