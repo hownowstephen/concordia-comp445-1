@@ -1,12 +1,9 @@
-// CLIENT TCP PROGRAM
-// Revised and tidied up by
-// J.W. Atwood
-// 1999 June 30
+// Basic FTP client
+// @author Stephen Young
+// @email st_youn@encs.concordia.ca
+// @student_id 9736247
 
 char* getmessage(char *);
-
-/* send and receive codes between client and server */
-/* This is your basic WINSOCK shell */
 
 #include <winsock.h>
 #include <stdio.h>
@@ -22,8 +19,6 @@ using namespace std;
 using namespace std;
 
 #include "filetransfer.cpp"
-
-
 
 //user defined port number
 #define REQUEST_PORT 0x7070;
@@ -42,7 +37,6 @@ SOCKADDR_IN sa_in;      // fill with server info, IP, port
 
 //buffer data types
 char szbuffer[BUFFER_SIZE];
-char *buffer;
 
 int ibufferlen=0;
 int ibytessent;
@@ -59,12 +53,6 @@ char localhost[11],
 char filename[11];
 char direction[3];
 
-
-//other
-HANDLE test;
-DWORD dwtest;
-
-
 int main(void){
 
 	WSADATA wsadata;
@@ -74,8 +62,6 @@ int main(void){
 		if (WSAStartup(0x0202,&wsadata)!=0){  
 			cout<<"Error in starting WSAStartup()" << endl;
 		} else {
-			buffer="WSAStartup was successful\n";   
-			WriteFile(test,buffer,sizeof(buffer),&dwtest,NULL); 
 
 			/* Display the wsadata structure */
 			cout<< endl
@@ -123,13 +109,6 @@ int main(void){
 		if (connect(s,(LPSOCKADDR)&sa_in,sizeof(sa_in)) == SOCKET_ERROR)
 			throw "connect failed\n";
 
-		/* Have an open connection, so, server is 
-
-		   - waiting for the client request message
-		   - don't forget to append <carriage return> 
-		   - <line feed> characters after the send buffer to indicate end-of file */
-
-
 		// Ask for name of file
 		cout << "please enter the filename: " << flush ;
 		cin >> filename ;
@@ -138,6 +117,7 @@ int main(void){
 		cout << "Direction of transfer [get|put]: " << flush;
 		cin >> direction;
 
+		// Make sure the direction is one of get or put
 		if(!strcmp(direction,GET) || !strcmp(direction,PUT)){ 
 			
 			char cusername[100];
@@ -145,21 +125,22 @@ int main(void){
 
 			GetUserName(cusername,&dwusername);
 
-			cout << "user: " << cusername << endl;
-
-			//append client message to szbuffer + send.
+			// Generate client headers
 			sprintf(szbuffer,"%s %s %s", cusername, direction, filename); 
 
 			ibytessent=0;    
 			ibufferlen = strlen(szbuffer);
 			
+			// Send headers to the server
 			if ((ibytessent = send(s,szbuffer,ibufferlen,0)) == SOCKET_ERROR)	
 				throw "Send failed\n";  
 			else	
 				cout << "Message to server: " << szbuffer << endl;
-			memset(szbuffer,0,BUFFER_SIZE);
+			memset(szbuffer,0,BUFFER_SIZE); // zero the buffer
 
+			// Perform a get request
 			if(!strcmp(direction,GET)) get(s,cusername,direction,filename);
+			// Perform a put request
 			else if(!strcmp(direction,PUT))	put(s,cusername,direction,filename);
 
 		}else{
@@ -169,7 +150,6 @@ int main(void){
 	} // try loop
 
 	//Display any needed error response.
-
 	catch (const char *str) { 
 		cerr<<str<<endl;
 	}

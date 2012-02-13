@@ -1,14 +1,18 @@
-#include <winsock.h>
+// File Transfer Library, encapsulates get and put requests
+// @author Stephen Young
+// @email st_youn@encs.concordia.ca
+// @student_id 9736247
+
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <iostream>
 using namespace std;
+#include <winsock.h>
 #include <fstream>
 #include <string.h>
 #include <windows.h>
 
-//user defined port number
-#define REQUEST_PORT 0x7070;
 #define BUFFER_SIZE 128
 #define GET "get"
 #define PUT "put"
@@ -47,13 +51,13 @@ void get(SOCKET s, char * username, char * direction, char * filename){
 		sscanf(szbuffer,"%s %d",response,&filesize);
 		cout << "Response " << response << " filesize " << filesize << endl;
 
-		// Ensure the response from the server is OK
+		// Ensure the response from the socket is OK
 		if(!strcmp(response,OK)){
 
 			// Open our local file for writing
 			output_file.open(filename);
 
-			// Send ack to signal to the server to send data
+			// Send ack to start data transfer
 			memset(szbuffer,0,BUFFER_SIZE);
 			sprintf(szbuffer,"SEND");
 			ibufferlen = strlen(szbuffer);
@@ -134,21 +138,21 @@ void put(SOCKET s, char * username, char * direction, char * filename){
 
 			cout << "File size: " << filesize << endl;
 
-			// Send back an OK message to the client to confirm receipt
-			memset(szbuffer,0,BUFFER_SIZE);
+			// Send back an OK message to confirm receipt
+			memset(szbuffer,0,BUFFER_SIZE); // zero the buffer
 			sprintf(szbuffer,"OK %d",filesize);
 			ibufferlen = strlen(szbuffer);
 
 			if((ibytessent = send(s,szbuffer,ibufferlen,0))==SOCKET_ERROR)
 				throw "error in send in server program\n";
 
-			// Wait for confirmation from the client  
-			memset(szbuffer,0,BUFFER_SIZE);
+			// Wait for confirmation 
+			memset(szbuffer,0,BUFFER_SIZE); // zero the buffer
 			if((ibytesrecv = recv(s,szbuffer,BUFFER_SIZE,0)) == SOCKET_ERROR)
 				throw "Receive error in server program\n";
 
 			int count = 0;
-			// Loop through the file and stream to the client
+			// Loop through the file and stream in chunks based on the buffer size
 			while(!filedata.eof()){
 				filedata.read(szbuffer,BUFFER_SIZE-1);
 				ibufferlen = strlen(szbuffer);
@@ -157,7 +161,7 @@ void put(SOCKET s, char * username, char * direction, char * filename){
 				if((ibytessent = send(s,szbuffer,ibufferlen,0))==SOCKET_ERROR)
 					throw "error in send in server program\n";
 
-				memset(szbuffer,0,BUFFER_SIZE);
+				memset(szbuffer,0,BUFFER_SIZE); // zero the buffer
 			}
 
 			filedata.close();
@@ -173,15 +177,16 @@ void put(SOCKET s, char * username, char * direction, char * filename){
 
 			cout << "File does not exist, sending decline" << endl;
 			// Send back a NO to the client to indicate that the file does not exist
-			memset(szbuffer,0,BUFFER_SIZE);
+			memset(szbuffer,0,BUFFER_SIZE); // zero the buffer
 			sprintf(szbuffer,"NO -1");
 			ibufferlen = strlen(szbuffer);
 
 			if((ibytessent = send(s,szbuffer,ibufferlen,0))==SOCKET_ERROR)
 				throw "error in send in server program\n";
 		}
+	// Print out any errors
 	} catch(const char* str){
 		cerr<<str<<WSAGetLastError()<<endl;
 	}
-	memset(szbuffer,0,BUFFER_SIZE);
+	memset(szbuffer,0,BUFFER_SIZE); // zero the buffer
  }
